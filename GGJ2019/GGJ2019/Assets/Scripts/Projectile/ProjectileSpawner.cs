@@ -5,7 +5,7 @@ using UnityEngine;
 // 플레이어에게 부착해주세요
 public class ProjectileSpawner : MonoBehaviour
 {
-    public GameObject projectilePrefab;
+    public List<GameObject> projectilePrefab;
     // 한 변 길이
     [SerializeField] private int length;
     [SerializeField] private int minPower, maxPower;
@@ -47,7 +47,8 @@ public class ProjectileSpawner : MonoBehaviour
 
     private void Launch()
     {
-        GameObject projecile = Instantiate(projectilePrefab, GetRandomPos(), Quaternion.identity);
+        var projectileIndex = Random.Range(0, projectilePrefab.Count);
+        GameObject projecile = Instantiate(projectilePrefab[projectileIndex], GetRandomPos(), Quaternion.identity);
         int random = Random.Range(minPower, maxPower);
         var direction = transform.position - projecile.transform.position;
         projecile.GetComponent<Rigidbody2D>()?.AddForce(direction * random);
