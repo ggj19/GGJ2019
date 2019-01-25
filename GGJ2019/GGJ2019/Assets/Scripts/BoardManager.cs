@@ -20,7 +20,6 @@ public class BoardManager : MonoBehaviour {
     }
     public int columns = 8;     // 열을 위한 정수 (우리가 원하는 공간을 그림(가로 크기조정))
     public int rows = 8;         // 행을 위한 정수 (세로 크기조정)
-    public int Rand_Max = 0;
     //public Count TileCount = new Count(1, 7); // Count를 사용해 레벨마다 얼마나 많은 벽을 랜덤하게 생성할지 범위를 특정
 
     // 오브젝트를 불러옴
@@ -59,7 +58,7 @@ public class BoardManager : MonoBehaviour {
         {
             for (int y = -1* rows/2; y < rows/2 + 1; y++)
             {
-                int rand = Random.Range(0, Rand_Max);
+                int rand = Random.Range(0, Tile.Length);
                 GameObject instance = Instantiate(Tile[rand], new Vector3(x*1.28f, y*1.28f, 10f), Quaternion.identity) as GameObject; // 바닥 타일 소환
                   // instance라 불리는 게임 오브젝트 타입을 선언하고, 인스턴스화 하려는 오브젝트를 할당,
                   //   따라서 Instatiate함수를 불러오고, 우리가 고른 프리펩인 toInstantiate를 넣어 현재 루프의 

@@ -17,9 +17,13 @@ public class PlayerControl : MonoBehaviour {
     Animator animator;
     Vector3 objectScale;
 
+    Build build;
+
     void Awake() {
         animator = GetComponent<Animator>();
-	}
+        build = GetComponent<Build>();
+        build.Init(10, 1.28f);
+    }
 
     void FixedUpdate() {
         MoveControl();
@@ -27,8 +31,12 @@ public class PlayerControl : MonoBehaviour {
 
     void MoveControl()
     {
+        // 건물 짓기
+        BuildControl();
+        
         // hp 줄어듬
         Global.Hungry -= 1 * Time.deltaTime;
+        if (Global.Hungry <= 0) Global.Status = 2; // GameEnd
 
         moveX = moveSpeed * Time.deltaTime * Input.GetAxisRaw("Horizontal"); // Raw를 쓰면 가속도 적용 x
         moveY = moveSpeed * Time.deltaTime * Input.GetAxisRaw("Vertical");
@@ -56,6 +64,23 @@ public class PlayerControl : MonoBehaviour {
         //p_sprite.flipX = true;
 
         p_sprite.transform.rotation = Quaternion.Euler(0, 0, angle);
+    }
+
+    void BuildControl()
+    {
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            build.CreateBuild(angle);
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D Col)
+    {
+        if (Col.tag == "Food")
+        {
+            Global.Hungry = 100f;
+            Col.gameObject.SetActive(false);
+        }
     }
 
     void OnTriggerStay2D(Collider2D Col)
