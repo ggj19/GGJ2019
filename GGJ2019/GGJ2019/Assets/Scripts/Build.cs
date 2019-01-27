@@ -2,45 +2,34 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Build : MonoBehaviour
 {
-    public int wallConunt { get; private set; }
+    public int wallCount { get; private set; }
+    public int fireCount { get; private set; }
     private float tileSize;
     public GameObject wallPrefab;
+    public Text UI_WallText;
+    public Text UI_FireText;
 
     private List<GameObject> wallList;
     private bool bIsBuilding;
     private Vector3 WallPos;
 
-    // 상위 모듈에서 초기화 한번 해주세요 (처음 보유한 벽 개수, 타일 크기 = x,y좌표상의 길이)
-    public void Init(int startWallCount, float tileSize)
+    public AudioClip createBuildSound, destroyBuildSound;
+
+    // 상위 모듈에서 초기화 한번 해주세요 (처음 보유한 횃불, 벽 개수, 타일 크기 = x,y좌표상의 길이)
+    public void Init(int startFireCount, int startWallCount, float tileSize)
     {
-        wallConunt = startWallCount;
+        wallCount = startWallCount;
         this.tileSize = tileSize;
         wallList = new List<GameObject>();
-    }
+        UI_WallText.text = $"{wallCount}";
 
-    // 플레이어가 위치한 타일 위치 반환
-    /*private Vector2 FindTileCenterPos()
-    {
-        float x = GetPos((int)Mathf.Abs(playerPos.x));
-        float y = GetPos((int)Mathf.Abs(playerPos.y));
-
-        return new Vector2(x, y) * playerPos.normalized;
-    }*/
-
-    private float GetPos(int pos)
-    {
-        var interval = (float)tileSize / 2;
-        for (int i = 0; i < 1000; i++)
-        {
-            if (interval + i * tileSize >= pos)
-            {
-                return tileSize * i;
-            }
-        }
-        return 0;
+        fireCount = startFireCount;
+        this.tileSize = tileSize;
+        UI_FireText.text = $"{wallCount}";
     }
 
     private Vector3 GetWallOffset(float angle)
@@ -61,7 +50,7 @@ public class Build : MonoBehaviour
     // 건물 생성
     public void CreateBuild(float angle)
     {
-        if (wallConunt != 0 && !bIsBuilding)
+        if (wallCount != 0 && !bIsBuilding)
         {
             bIsBuilding = true;
             
@@ -75,28 +64,20 @@ public class Build : MonoBehaviour
                 }
             }
             GameObject wall = Instantiate(wallPrefab, WallPos, Quaternion.identity);
-            wall.transform.Rotate(new Vector3(0, 0, angle));
+            float tmp_angle = 180 + angle;
+
+            wall.transform.Rotate(new Vector3(0, 0, tmp_angle));
             wallList.Add(wall);
             // 바라보는 방향 따라 +a 해서 설치
-            wallConunt--;
+            wallCount--;
+            UI_WallText.text = $"{wallCount}";
             bIsBuilding = false;
+            AudioManager.PlaySound(createBuildSound);
         }
     }
-    
-    // 건물 파괴
-    /*public void DestroyBuild(Vector2 playerPos, float angle)
-    {
-        Vector3 wallPos = FindTileCenterPos(playerPos) + GetWallOffset(angle);
 
-        GameObject wall = wallList.Where(w => w.transform.position == wallPos).FirstOrDefault();
-        if (wall)
-        {
-            Destroy(wall);
-            wallList.Remove(wall);
-            wallConunt++;
-        }
-    }*/
     
+
     private void OnTriggerStay2D(Collider2D Col)
     {
         //Debug.Log(wallConunt);
@@ -107,11 +88,14 @@ public class Build : MonoBehaviour
 
         if (Col.tag == "Wall")
         {
-            if (Input.GetKeyDown(KeyCode.S))
+            if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown("joystick button 0"))
             {
+                AudioManager.PlaySound(destroyBuildSound);
+
                 wallList.Remove(Col.gameObject);
                 Destroy(Col.gameObject);
-                wallConunt++;
+                wallCount++;
+                UI_WallText.text = $"{wallCount}";
             }
         }
     }

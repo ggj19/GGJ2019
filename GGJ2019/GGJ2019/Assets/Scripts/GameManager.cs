@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour {
     [HideInInspector] // 변수가 public이지만 에디터에서는 숨김
 
     private int level = 1; // 적이 2레벨부터 등장하기 때문에 3
+    public AudioSource uiButtonSound;
 
 	// Use this for initialization
     void Awake () { // Start()를 Awake()로 바꿈

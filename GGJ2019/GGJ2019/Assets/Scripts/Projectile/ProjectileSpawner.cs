@@ -6,6 +6,10 @@ using UnityEngine;
 public class ProjectileSpawner : MonoBehaviour
 {
     public List<GameObject> projectilePrefab;
+    public GameObject Zombie;
+    public GameObject Food;
+    public int ZombieCount = 0;
+
     // 한 변 길이
     [SerializeField] private int length;
     [SerializeField] private int minPower, maxPower;
@@ -19,6 +23,7 @@ public class ProjectileSpawner : MonoBehaviour
     public void Init(Vector3 playerPos)
     {
         StartCoroutine(SpawnProjectiles(playerPos));
+        StartCoroutine("SpawnFood");
     }
 
     private int GetRandomLength()
@@ -52,6 +57,17 @@ public class ProjectileSpawner : MonoBehaviour
         int random = Random.Range(minPower, maxPower);
         var direction = transform.position - projecile.transform.position;
         projecile.GetComponent<Rigidbody2D>()?.AddForce(direction * random);
+
+        if (ZombieCount < 50)
+        {
+             GameObject Zom = Instantiate(Zombie, GetRandomPos(), Quaternion.identity);
+             Zom.gameObject.GetComponent<MonsterControl>().Player = gameObject;
+            Zom.GetComponent<MonsterControl>().OnDead += () =>
+            {
+                ZombieCount--;
+            };
+             ZombieCount++;
+        }
     }
 
     private IEnumerator SpawnProjectiles(Vector2 playerPos)
@@ -60,6 +76,15 @@ public class ProjectileSpawner : MonoBehaviour
         {
             yield return new WaitForSeconds(spawnCycleTime);
             Launch();
+        }
+    }
+
+    private IEnumerator SpawnFood()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(10f);
+            Instantiate(Food, GetRandomPos(), Quaternion.identity); // 힐팩 생성
         }
     }
 }

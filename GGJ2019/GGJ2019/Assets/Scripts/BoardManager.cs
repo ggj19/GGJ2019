@@ -18,12 +18,16 @@ public class BoardManager : MonoBehaviour {
             maximum = max;
         }
     }
+
     public int columns = 8;     // 열을 위한 정수 (우리가 원하는 공간을 그림(가로 크기조정))
     public int rows = 8;         // 행을 위한 정수 (세로 크기조정)
+    public GameObject[,] TileMgr;
+    
     //public Count TileCount = new Count(1, 7); // Count를 사용해 레벨마다 얼마나 많은 벽을 랜덤하게 생성할지 범위를 특정
 
     // 오브젝트를 불러옴
     public GameObject[] Tile;
+    public GameObject Food;     // 음식
     //public GameObject[] wallTiles;  // 인스펙터에서 선택하게 될 여러 프리팹들로 각각의 배열을 채움
 
     private Transform boardHolder;  // Hierarchy를 깨끗이 하기위해 사용(죄다 boardHolder 자식으로 집어넣음)
@@ -32,8 +36,7 @@ public class BoardManager : MonoBehaviour {
     // 해당 장소에 있는지 없는지 추적하는데 사용
 
 
-    // UI
-    public GameObject UI_Hungry;
+    // 방향 결정
 
 /* 리스트 초기화 */
 
@@ -49,11 +52,48 @@ public class BoardManager : MonoBehaviour {
         }
     }
 
+    void CreateWall(GameObject instance, int Col, int Row)
+    {
+        Tile tile = instance.gameObject.GetComponent<Tile>();
+        instance.gameObject.GetComponent<SpriteRenderer>().sprite = tile.tile[0];
+        instance.gameObject.GetComponent <Tile>().Map.gameObject.SetActive(true);
+        instance.gameObject.GetComponent<Tile>().Map.gameObject.GetComponent<SpriteRenderer>().sprite = tile.tile[0];
+        int HomeTileX = Col; // 집 타일 개수
+        int HomeTileY = Row; // 집 타일 개수
+        float BaseX = 0.64f * HomeTileX;    // 기준점
+        float BaseY = 0.64f * HomeTileY;    // 기준점
+
+        for (int i = 0; i < HomeTileX; i++)
+        {
+            Vector3 WallPos = new Vector3(instance.transform.position.x - 0.64f * (HomeTileX - 1) + 1.28f * i, instance.transform.position.y - BaseY, 0);
+            GameObject wall = Instantiate(tile.wallPrefab, WallPos, Quaternion.identity);
+            wall.transform.Rotate(new Vector3(0, 0, 180f));
+
+            WallPos = new Vector3(instance.transform.position.x + 0.64f * (HomeTileX - 1) - 1.28f * i, instance.transform.position.y + BaseY, 0);
+            wall = Instantiate(tile.wallPrefab, WallPos, Quaternion.identity);
+            wall.transform.Rotate(new Vector3(0, 0, 0f));
+        }
+
+        for (int i = 0; i < HomeTileY; i++)
+        {
+            Vector3 WallPos = new Vector3(instance.transform.position.x - BaseX, instance.transform.position.y - 0.64f * (HomeTileY - 1) + 1.28f * i, 0);
+            GameObject wall = Instantiate(tile.wallPrefab, WallPos, Quaternion.identity);
+            wall.transform.Rotate(new Vector3(0, 0, 90f));
+
+            WallPos = new Vector3(instance.transform.position.x + BaseX, instance.transform.position.y + 0.64f * (HomeTileY - 1) - 1.28f * i, 0);
+            wall = Instantiate(tile.wallPrefab, WallPos, Quaternion.identity);
+            wall.transform.Rotate(new Vector3(0, 0, 270f));
+        }
+    }
+
     /* void를 리턴하는 private 함수인 BoardSetup()선언, 바깥 벽과 게임 보드의 바닥을 짓기 위해 사용 */
     void BoardSetup() 
-    { 
-        boardHolder = new GameObject("Board").transform; 
-         // boardHolder를 Boad라는 새로운 게임 오브젝트의 Transform과 동일하게 하고 시작
+    {
+        boardHolder = new GameObject("Board").transform;
+        TileMgr = new GameObject[columns, rows];
+        float tileSize = 1.28f;
+
+        // boardHolder를 Boad라는 새로운 게임 오브젝트의 Transform과 동일하게 하고 시작
         for (int x = -1*columns/2; x < columns/2 + 1; x++) // -1과 +1은 바닥과 바깥벽을 구분하기 위함
         {
             for (int y = -1* rows/2; y < rows/2 + 1; y++)
@@ -64,7 +104,44 @@ public class BoardManager : MonoBehaviour {
                   //   따라서 Instatiate함수를 불러오고, 우리가 고른 프리펩인 toInstantiate를 넣어 현재 루프의 
                   //   x와 y 위치 값이 있는 new Vector3를 더함
                 instance.transform.SetParent(boardHolder);
-                  // 새로 생성된 인스턴스의 부모 오브젝트를 boardHolder로 해줌
+                // 새로 생성된 인스턴스의 부모 오브젝트를 boardHolder로 해줌
+
+                if (instance.transform.position.x == 0 && instance.transform.position.y == 0)
+                {
+                    CreateWall(instance, 3, 3);
+                }
+
+                
+                do
+                {
+                    rand = (int)Random.Range(5, 27);
+                } while (rand % 2 == 1);
+                if ((instance.transform.position.x == -tileSize * rand && instance.transform.position.y == 0) ||
+                        (instance.transform.position.x == tileSize * rand && instance.transform.position.y == 0) ||
+                        (instance.transform.position.x == 0 && instance.transform.position.y == tileSize * rand) ||
+                        (instance.transform.position.x == 0 && instance.transform.position.y == -tileSize * rand) ||
+                        (instance.transform.position.x == -tileSize * rand && instance.transform.position.y == -tileSize * rand) ||
+                        (instance.transform.position.x == tileSize * rand && instance.transform.position.y == -tileSize * rand) ||
+                        (instance.transform.position.x == -tileSize * rand && instance.transform.position.y == tileSize * rand) ||
+                        (instance.transform.position.x == tileSize * rand && instance.transform.position.y == tileSize * rand))
+                {
+                    Vector3 FoodPos = new Vector3(instance.transform.position.x, instance.transform.position.y, -1);
+                    Instantiate(Food, FoodPos, Quaternion.identity);
+                    
+                    int rX;
+                    int rY;
+                    do
+                    {
+                        rX = Random.Range(1, 3);
+                        rY = Random.Range(1, 3);
+                    } while (rX % 2 == 0 || rY % 2 == 0);
+
+                    if (x < columns / 2 && y < rows / 2)
+                    {
+                        TileMgr[(int)(x + columns / 2), (int)(y + rows / 2)] = instance;
+                    }
+                    CreateWall(instance, rX, rY);
+                }
             }
         }
     }
@@ -103,10 +180,5 @@ public class BoardManager : MonoBehaviour {
         //LayoutObjectAtRandom(foodTiles, foodCount.minimum, foodCount.maximum);
         //int enemyCount = (int)Mathf.Log(level, 2f);
         // 레벨에 따라 적 생성, 로그함수를 사용 ex) 1스테이지 : 1마리, 4스테이지 : 2마리, 8스테이지 : 3마리
-    }
-
-    void Update()
-    {
-        UI_Hungry.transform.localScale = new Vector3(Global.Hungry/100f, 1f, 1f);
     }
 }
